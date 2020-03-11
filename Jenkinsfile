@@ -1,43 +1,42 @@
-    pipeline {
-        agent any
-     
-        tools {
-            maven 'localMaven'
-        }
-     
-    stages{
-            stage('Build'){
-                steps {
-                    sh 'mvn clean package'
+pipeline {
+    agent any
+
+    parameters {
+         string(name: 'tomcat_dev', defaultValue: '54.147.179.242', description: 'Staging Server')
+         string(name: 'tomcat_prod', defaultValue: '3.84.47.138', description: 'Production Server')
+    }
+
+    triggers {
+         pollSCM('* * * * *')
+     }
+
+stages{
+        stage('Build'){
+            steps {
+                sh 'mvn clean package'
+            }
+            post {
+                success {
+                    echo 'Now Archiving...'
+                    archiveArtifacts artifacts: '**/target/*.war'
                 }
-                post {
-                    success {
-                        echo 'Now Archiving...'
-                        archiveArtifacts artifacts: '**/target/*.war'
+            }
+        }
+
+        stage ('Deployments'){
+            parallel{
+                stage ('Deploy to Staging'){
+                    steps {
+                        sh "scp -i //home/damodar/Downloads/LinuxmachineKeypair.pem **/target/*.war ec2-user@${params.tomcat_dev}:/var/lib/tomcat/webapps"
+                    }
+                }
+
+                stage ("Deploy to Production"){
+                    steps {
+                        sh "scp -i /home/damodar/Downloads/LinuxmachineKeypair.pem **/target/*.war ec2-user@${params.tomcat_prod}:/var/lib/tomcat/webapps"
                     }
                 }
             }
-            stage('Deploy to staging'){
-                steps {
-                build job: 'deploytostaging'
-                }
-           }
-           stage('Deploy to Production'){
-              
-                steps {
-                    timeout(time:5, unit:'DAYS'){
-                    input message:'Approve Production deployment?'
-               }
-                build job: 'deploy-to-prod'
-                }
-            post{
-                success {
-                    echo 'Code deployed to production'
-                }
-                failure {
-                    echo 'Deployment failed .'
-                }
-            }
-           }
         }
     }
+}
