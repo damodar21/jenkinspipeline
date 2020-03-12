@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     parameters {
-         string(name: 'tomcat_dev', defaultValue: '54.147.179.242', description: 'Staging Server')
-         string(name: 'tomcat_prod', defaultValue: '3.84.47.138', description: 'Production Server')
+         string(name: 'tomcat_dev', defaultValue: '54.208.9.133', description: 'Staging Server')
+         string(name: 'tomcat_prod', defaultValue: '18.208.230.118', description: 'Production Server')
     }
 
     triggers {
@@ -27,7 +27,7 @@ stages{
             parallel{
                 stage ('Deploy to Staging'){
                     steps {
-                        sh "scp -o StrictHostKeyChecking=no -i /home/damodar/Downloads/LinuxmachineKeypair.pem **/target/*.war ec2-user@${params.tomcat_dev}:/var/lib/tomcat/webapps"
+                        sh "scp -i /home/damodar/Downloads/LinuxmachineKeypair.pem **/target/*.war ec2-user@${params.tomcat_dev}:/var/lib/tomcat/webapps"
                     }
                 }
 
